@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarin Electric — Growth Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#080b10;--s1:#0f1520;--s2:#141c2e;--s3:#1a2438;
+  --border:#1e2d48;--accent:#f5a623;--orange:#e05f2a;
+  --green:#2dd4a7;--blue:#4a90d9;--purple:#9b6ddb;--red:#e04040;
+  --text:#c8d4e8;--muted:#4a5878;--label:#7a90b8;--white:#eef2fa;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-height:100vh;}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);}
+.login-box{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:48px 40px;width:360px;text-align:center;}
+.login-logo{font-family:'Bebas Neue';font-size:36px;letter-spacing:3px;color:var(--white);margin-bottom:4px;}
+.login-logo span{color:var(--accent);}
+.login-sub{font-family:'DM Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:32px;}
+.login-input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;color:var(--white);font-family:'DM Mono';font-size:14px;letter-spacing:2px;text-align:center;outline:none;margin-bottom:12px;transition:border-color .15s;}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:6px;padding:12px;font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:#000;cursor:pointer;transition:opacity .15s;}
+.login-btn:hover{opacity:.85;}
+.login-err{font-family:'DM Mono';font-size:11px;color:var(--orange);margin-top:10px;min-height:18px;}
+.login-hint{font-size:11px;color:var(--muted);margin-top:20px;}
+
+/* APP */
+#app{display:none;}
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 24px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--white);}
+.logo span{color:var(--accent);}
+.nav{display:flex;gap:2px;}
+.nb{background:none;border:none;cursor:pointer;font-family:'DM Mono';font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:5px 11px;border-radius:4px;transition:all .15s;}
+.nb:hover,.nb.active{background:var(--s3);color:var(--accent);}
+.topbar-r{display:flex;align-items:center;gap:12px;}
+.goal-badge{font-family:'DM Mono';font-size:10px;color:var(--accent);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:4px;padding:3px 10px;}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:4px;font-family:'DM Mono';font-size:9px;color:var(--muted);padding:4px 10px;cursor:pointer;}
+.logout-btn:hover{color:var(--orange);border-color:var(--orange);}
+
+.page{display:none;padding:20px 24px 64px;}
+.page.active{display:block;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.span2{grid-column:span 2;}
+.span3{grid-column:span 3;}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.card-title{font-family:'DM Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.card-sub{font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.kv{font-family:'Bebas Neue';font-size:32px;letter-spacing:1px;color:var(--white);line-height:1;margin:4px 0 3px;}
+.kv.sm{font-size:22px;}
+.kv.goal{color:var(--accent);}
+.pill{display:inline-flex;align-items:center;font-family:'DM Mono';font-size:9px;padding:2px 8px;border-radius:20px;}
+.pill.up{background:rgba(45,212,167,.15);color:var(--green);}
+.pill.dn{background:rgba(224,95,42,.15);color:var(--orange);}
+.pill.warn{background:rgba(245,166,35,.15);color:var(--accent);}
+.pill.info{background:rgba(74,144,217,.15);color:var(--blue);}
+.pill.goal{background:rgba(245,166,35,.2);color:var(--accent);border:1px solid rgba(245,166,35,.4);}
+
+.sec{font-family:'DM Mono';font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding-bottom:8px;margin-bottom:12px;border-bottom:1px solid var(--border);}
+.sec.mt{margin-top:22px;}
+.chart-wrap{position:relative;width:100%;}
+
+/* GOAL TRACKER */
+.goal-track{background:var(--s2);border-radius:6px;padding:14px 16px;margin-bottom:14px;}
+.gt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.gt-label{font-family:'DM Mono';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.gt-pct{font-family:'Bebas Neue';font-size:22px;color:var(--accent);}
+.gt-bar{height:8px;background:var(--s3);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.gt-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.gt-row{display:flex;justify-content:space-between;font-family:'DM Mono';font-size:10px;color:var(--muted);}
+
+/* LEVER SLIDERS */
+.lever-panel{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:14px;}
+.lever-title{font-family:'DM Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;}
+.lever-title.c1{color:var(--blue);}
+.lever-title.c2{color:var(--green);}
+.lever-title.c3{color:var(--purple);}
+.sl-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.sl-label{font-size:12px;color:var(--text);flex:1;line-height:1.4;}
+.sl-val{font-family:'DM Mono';font-size:11px;color:var(--accent);width:80px;text-align:right;flex-shrink:0;}
+input[type=range]{width:140px;accent-color:var(--accent);flex-shrink:0;}
+
+/* OUTPUT PANEL */
+.output-panel{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.op-year{font-family:'DM Mono';font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.op-rev{font-family:'Bebas Neue';font-size:38px;color:var(--white);line-height:1;}
+.op-rev.hit{color:var(--green);}
+.op-rev.miss{color:var(--orange);}
+.op-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,45,72,.6);font-size:12px;}
+.op-row:last-child{border-bottom:none;}
+.op-row.total{font-weight:600;font-size:14px;color:var(--white);padding-top:10px;border-top:1px solid var(--border);}
+.op-amt{font-family:'DM Mono';font-size:11px;}
+.gap-bar{margin-top:10px;background:var(--s3);border-radius:4px;height:6px;overflow:hidden;}
+.gap-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:4px;transition:width .8s;}
+
+/* CTRL */
+.ctrl-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+.cb{background:var(--s2);border:1px solid var(--border);border-radius:5px;font-family:'DM Mono';font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--label);padding:5px 10px;cursor:pointer;transition:all .15s;}
+.cb:hover,.cb.active{background:var(--s3);border-color:var(--accent);color:var(--accent);}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-family:'DM Mono';font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:5px 0;border-bottom:1px solid var(--border);}
+.tbl th:not(:first-child){text-align:right;}
+.tbl td{padding:7px 0;border-bottom:1px solid rgba(30,45,72,.4);font-size:12px;}
+.tbl td:not(:first-child){text-align:right;font-family:'DM Mono';font-size:11px;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl .tot td{font-weight:600;color:var(--white);border-top:1px solid var(--border);padding-top:10px;}
+
+/* BOXES */
+.alert{background:rgba(224,95,42,.1);border:1px solid rgba(224,95,42,.3);border-left:3px solid var(--orange);border-radius:6px;padding:10px 14px;font-size:12px;color:#e89070;margin-bottom:12px;line-height:1.7;}
+.green-box{background:rgba(45,212,167,.08);border:1px solid rgba(45,212,167,.25);border-left:3px solid var(--green);border-radius:6px;padding:10px 14px;font-size:12px;color:#60ccaa;margin-bottom:12px;line-height:1.7;}
+.blue-box{background:rgba(74,144,217,.08);border:1px solid rgba(74,144,217,.25);border-left:3px solid var(--blue);border-radius:6px;padding:10px 14px;font-size:12px;color:#88aacc;margin-bottom:12px;line-height:1.7;}
+.tag{display:inline-block;font-family:'DM Mono';font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:1px 6px;border-radius:3px;margin-left:3px;}
+.tag.ok{background:rgba(45,212,167,.15);color:var(--green);}
+.tag.est{background:rgba(245,166,35,.15);color:var(--accent);}
+.tag.req{background:rgba(224,95,42,.12);color:#e07050;}
+.note{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.7;}
+hr{border:none;border-top:1px solid var(--border);margin:18px 0;}
+
+/* Milestone cards */
+.milestone{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;overflow:hidden;}
+.milestone::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.milestone.done::before{background:var(--green);}
+.milestone.active-m::before{background:var(--accent);}
+.milestone.future::before{background:var(--border);}
+.ms-num{font-family:'DM Mono';font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.ms-val{font-family:'Bebas Neue';font-size:26px;color:var(--white);margin-bottom:2px;}
+.ms-val.done{color:var(--green);}
+.ms-val.active-m{color:var(--accent);}
+.ms-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+
+/* Checklist */
+.checklist{list-style:none;}
+.checklist li{padding:8px 0;border-bottom:1px solid rgba(30,45,72,.4);font-size:12px;display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.checklist li:last-child{border-bottom:none;}
+.check-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.check-label{color:var(--muted);font-size:10px;font-family:'DM Mono';flex-shrink:0;margin-top:2px;width:60px;}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Tarin <span>&</span> Electric</div>
+    <div class="login-sub">Financial Intelligence Dashboard</div>
+    <input type="password" class="login-input" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Access Dashboard</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-hint">Contact your advisor for access credentials.</div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo">Tarin <span>&</span> Electric</div>
+    <div class="nav">
+      <button class="nb active" onclick="showPage('overview',this)">Overview</button>
+      <button class="nb" onclick="showPage('revenue',this)">Revenue</button>
+      <button class="nb" onclick="showPage('planner',this)">Growth Planner</button>
+      <button class="nb" onclick="showPage('expenses',this)">P&L</button>
+      <button class="nb" onclick="showPage('clients',this)">Clients</button>
+      <button class="nb" onclick="showPage('roadmap',this)">Roadmap</button>
+    </div>
+    <div class="topbar-r">
+      <div class="goal-badge">Goal: $1M → $5M</div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- ══ OVERVIEW ══ -->
+  <div id="page-overview" class="page active">
+    <div class="sec" style="margin-top:8px;">Current Status vs Goals</div>
+
+    <!-- Goal trackers -->
+    <div class="g2" style="margin-bottom:14px;">
+      <div class="card">
+        <div class="card-title">2027 Revenue Goal</div>
+        <div class="kv goal">$1,000,000</div>
+        <div class="goal-track" style="margin-top:10px;margin-bottom:0;">
+          <div class="gt-header"><span class="gt-label">2026 Run Rate Progress</span><span class="gt-pct">104.5%</span></div>
+          <div class="gt-bar"><div class="gt-fill" style="width:100%;background:linear-gradient(90deg,var(--green),var(--accent));"></div></div>
+          <div class="gt-row"><span>$0</span><span style="color:var(--green)">$1.045M run rate ✓</span><span>$1M goal</span></div>
+        </div>
+        <div class="note" style="margin-top:10px;">2026 is already annualizing above $1M. The $1M goal for 2027 is <strong style="color:var(--green)">achievable with no major changes</strong> — the real question is sustaining it and growing toward $5M.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2028 Revenue Goal</div>
+        <div class="kv goal">$5,000,000</div>
+        <div class="goal-track" style="margin-top:10px;margin-bottom:0;">
+          <div class="gt-header"><span class="gt-label">Current Trajectory</span><span class="gt-pct" style="color:var(--orange)">20.9%</span></div>
+          <div class="gt-bar"><div class="gt-fill" style="width:20.9%;background:linear-gradient(90deg,var(--orange),var(--accent));"></div></div>
+          <div class="gt-row"><span>$0</span><span style="color:var(--accent)">$1.045M now</span><span>$5M goal</span></div>
+        </div>
+        <div class="note" style="margin-top:10px;"><strong style="color:var(--orange)">$5M requires a company, not a solo operator.</strong> Needs 10–15 billable electricians. Go to the Roadmap tab for the honest step-by-step.</div>
+      </div>
+    </div>
+
+    <div class="g5" style="margin-bottom:14px;">
+      <div class="card"><div class="card-title">2025 Actual</div><div class="kv sm">$595K</div><div class="pill dn">Base year</div></div>
+      <div class="card"><div class="card-title">2026 Run Rate</div><div class="kv sm" style="color:var(--green)">$1.05M</div><div class="pill up">On track</div></div>
+      <div class="card"><div class="card-title">Peak Month</div><div class="kv sm">$297K</div><div class="pill info">Mar '26</div></div>
+      <div class="card"><div class="card-title">Avg Ticket '26</div><div class="kv sm">$8,711</div><div class="pill up">↑ Growing</div></div>
+      <div class="card"><div class="card-title">True Overhead</div><div class="kv sm" style="color:var(--green)">2–4%</div><div class="pill info">Lean model</div></div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Revenue History + Goal Line</div>
+        <div class="card-sub">Actual 2021–2026 · 2027/2028 goals shown</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-goal-line"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">What Gets You to Each Goal</div>
+        <div class="card-sub">Stacked contribution of each growth lever</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-levers-overview"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ REVENUE ══ -->
+  <div id="page-revenue" class="page">
+    <div class="ctrl-bar">
+      <span style="font-family:'DM Mono';font-size:9px;color:var(--muted);">View:</span>
+      <button class="cb active" onclick="setRV('monthly',this)">Monthly</button>
+      <button class="cb" onclick="setRV('quarterly',this)">Quarterly</button>
+      <button class="cb" onclick="setRV('annual',this)">Annual</button>
+      <div style="flex:1"></div>
+      <span style="font-family:'DM Mono';font-size:9px;color:var(--muted);">Year:</span>
+      <button class="cb active" id="yr-all" onclick="filterYr('all',this)">All</button>
+      <button class="cb" id="yr-2022" onclick="filterYr('2022',this)">2022</button>
+      <button class="cb" id="yr-2023" onclick="filterYr('2023',this)">2023</button>
+      <button class="cb" id="yr-2024" onclick="filterYr('2024',this)">2024</button>
+      <button class="cb" id="yr-2025" onclick="filterYr('2025',this)">2025</button>
+      <button class="cb" id="yr-2026" onclick="filterYr('2026',this)">2026</button>
+    </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Revenue + 15% Overhead Reference Layer</div>
+      <div class="card-sub">Green = revenue · Orange = 15% overhead reference (original sheet formula, not actual)</div>
+      <div class="chart-wrap" style="height:280px"><canvas id="c-rev-oh"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-title">Seasonal Index</div>
+        <div class="card-sub">vs annual avg · 2022–2025 base</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="c-seasonal"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quarterly Comparison</div>
+        <div class="card-sub">Year over year by quarter</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="c-quarterly"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Ticket Size vs Volume</div>
+        <div class="card-sub">Avg job value rising as count falls</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="c-ticket"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GROWTH PLANNER ══ -->
+  <div id="page-planner" class="page">
+    <div class="blue-box">
+      <strong>Interactive Growth Model.</strong> Adjust the three levers below. The output panel shows projected revenue for 2027 and 2028, whether you hit the goals, and what net profit looks like. All math is shown — no black boxes.
+    </div>
+
+    <div class="g2">
+      <!-- LEFT: LEVERS -->
+      <div>
+        <!-- LEVER 1 -->
+        <div class="lever-panel">
+          <div class="lever-title c1">🏢 Lever 1 — Commercial Contracts</div>
+          <div class="sl-row">
+            <div class="sl-label">Number of ongoing commercial accounts<br><span style="font-size:10px;color:var(--muted)">Facilities, HOAs, food/industrial (like Malcolm, Imperial Dade, Eaton)</span></div>
+            <input type="range" min="0" max="20" value="3" id="l1-accounts" oninput="calcPlanner()">
+            <div class="sl-val" id="v1-accounts">3</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Avg annual value per account<br><span style="font-size:10px;color:var(--muted)">Your existing range: $25K–$200K. Avg is ~$75K</span></div>
+            <input type="range" min="20000" max="200000" value="75000" step="5000" id="l1-val" oninput="calcPlanner()">
+            <div class="sl-val" id="v1-val">$75K</div>
+          </div>
+        </div>
+
+        <!-- LEVER 2 -->
+        <div class="lever-panel">
+          <div class="lever-title c2">👷 Lever 2 — Additional Electricians</div>
+          <div class="sl-row">
+            <div class="sl-label">Additional billable electricians<br><span style="font-size:10px;color:var(--muted)">Employees or 1099 subcontractors. Each adds ~$180K revenue at $100/hr bill rate</span></div>
+            <input type="range" min="0" max="15" value="1" id="l2-crew" oninput="calcPlanner()">
+            <div class="sl-val" id="v2-crew">1</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Bill rate per hour<br><span style="font-size:10px;color:var(--muted)">CA licensed journeyman market rate: $85–$135/hr</span></div>
+            <input type="range" min="75" max="150" value="100" step="5" id="l2-rate" oninput="calcPlanner()">
+            <div class="sl-val" id="v2-rate">$100</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Billable hours per person per year<br><span style="font-size:10px;color:var(--muted)">Full-time = ~1800 hrs. Sub/part-time = 800–1200 hrs</span></div>
+            <input type="range" min="400" max="2000" value="1800" step="100" id="l2-hrs" oninput="calcPlanner()">
+            <div class="sl-val" id="v2-hrs">1,800</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Cost per electrician (salary + taxes + WC)<br><span style="font-size:10px;color:var(--muted)">Employee: ~$65K. Sub (1099): ~$45K in payments</span></div>
+            <input type="range" min="30000" max="120000" value="65000" step="5000" id="l2-cost" oninput="calcPlanner()">
+            <div class="sl-val" id="v2-cost">$65K</div>
+          </div>
+        </div>
+
+        <!-- LEVER 3 -->
+        <div class="lever-panel">
+          <div class="lever-title c3">📣 Lever 3 — Marketing / New Clients</div>
+          <div class="sl-row">
+            <div class="sl-label">Monthly marketing spend<br><span style="font-size:10px;color:var(--muted)">Google Ads, Yelp Ads, or referral fees. $0 = word of mouth only</span></div>
+            <input type="range" min="0" max="5000" value="500" step="100" id="l3-spend" oninput="calcPlanner()">
+            <div class="sl-val" id="v3-spend">$500</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Cost per lead<br><span style="font-size:10px;color:var(--muted)">Yelp: $25–$60. Google: $30–$80. Referral: $0–$100</span></div>
+            <input type="range" min="15" max="100" value="40" step="5" id="l3-cpl" oninput="calcPlanner()">
+            <div class="sl-val" id="v3-cpl">$40</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Lead close rate (%)<br><span style="font-size:10px;color:var(--muted)">Electricians typically close 25–40% of qualified leads</span></div>
+            <input type="range" min="10" max="60" value="30" id="l3-close" oninput="calcPlanner()">
+            <div class="sl-val" id="v3-close">30%</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Avg job ticket from new clients ($)<br><span style="font-size:10px;color:var(--muted)">Residential leads tend to be smaller: $2K–$6K</span></div>
+            <input type="range" min="1000" max="15000" value="5000" step="500" id="l3-ticket" oninput="calcPlanner()">
+            <div class="sl-val" id="v3-ticket">$5,000</div>
+          </div>
+        </div>
+
+        <!-- BASE -->
+        <div class="lever-panel">
+          <div class="lever-title" style="color:var(--label);">📊 Base Business</div>
+          <div class="sl-row">
+            <div class="sl-label">Organic growth rate on existing revenue<br><span style="font-size:10px;color:var(--muted)">How much existing clients + solo work grows year over year</span></div>
+            <input type="range" min="-20" max="50" value="10" id="l0-growth" oninput="calcPlanner()">
+            <div class="sl-val" id="v0-growth">+10%</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Owner draw / compensation (annual)</div>
+            <input type="range" min="0" max="300000" value="100000" step="5000" id="l0-draw" oninput="calcPlanner()">
+            <div class="sl-val" id="v0-draw">$100K</div>
+          </div>
+          <div class="sl-row">
+            <div class="sl-label">Materials % of revenue (0 = labor only)</div>
+            <input type="range" min="0" max="30" value="5" id="l0-mat" oninput="calcPlanner()">
+            <div class="sl-val" id="v0-mat">5%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: OUTPUT -->
+      <div>
+        <div class="output-panel">
+          <div class="op-year">2027 PROJECTION</div>
+          <div class="op-rev" id="out-rev27">—</div>
+          <div style="margin:6px 0 14px;font-family:'DM Mono';font-size:11px;" id="out-gap27"></div>
+          <div class="gap-bar"><div class="gap-fill" id="gap-fill27" style="width:0%"></div></div>
+          <hr>
+          <div id="out-detail27"></div>
+        </div>
+
+        <div class="output-panel" style="margin-top:12px;">
+          <div class="op-year">2028 PROJECTION</div>
+          <div class="op-rev" id="out-rev28">—</div>
+          <div style="margin:6px 0 14px;font-family:'DM Mono';font-size:11px;" id="out-gap28"></div>
+          <div class="gap-bar"><div class="gap-fill" id="gap-fill28" style="width:0%"></div></div>
+          <hr>
+          <div id="out-detail28"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="card-title">Revenue Projection Chart</div>
+          <div class="chart-wrap" style="height:220px"><canvas id="c-planner"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ P&L ══ -->
+  <div id="page-expenses" class="page">
+    <div class="green-box">
+      <strong>Lean operator model.</strong> True fixed overhead ≈ $10–13K/yr (insurance, license, QB, phone, tools). Variable = IRS mileage. Owner draw is separate — it's compensation, not overhead. The 15% from the original spreadsheet is a reference filter only.
+    </div>
+
+    <div class="ctrl-bar">
+      <span style="font-family:'DM Mono';font-size:9px;color:var(--muted);">Year:</span>
+      <button class="cb active" onclick="setPLY(2023,this)">2023 Peak</button>
+      <button class="cb" onclick="setPLY(2022,this)">2022</button>
+      <button class="cb" onclick="setPLY(2024,this)">2024</button>
+      <button class="cb" onclick="setPLY(2025,this)">2025</button>
+      <div style="flex:1"></div>
+      <span style="font-family:'DM Mono';font-size:9px;color:var(--muted);">Materials:</span>
+      <button class="cb active" onclick="setPLM(0,this)">Labor Only</button>
+      <button class="cb" onclick="setPLM(10,this)">10% Mixed</button>
+      <button class="cb" onclick="setPLM(25,this)">25% Supply</button>
+      <button class="cb" onclick="setPLM(15,this)">15% (Sheet)</button>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">P&L — <span id="pl-yr-label">2023</span></div>
+        <div id="pl-content"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Net Profit All Years — All Scenarios</div>
+        <div class="card-sub">Before owner draw · Labor-only gives highest margin for this business model</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="c-pl"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sec mt">Confirmed QB Expenses (All Years Combined)</div>
+    <div class="g2">
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Category</th><th>Confirmed Amount</th><th>% of $3.89M Rev</th></tr></thead>
+          <tbody>
+            <tr><td>Employee Wages (2023 only — Kerns + Espinoza)</td><td>$50,257</td><td>1.29%</td></tr>
+            <tr><td>Payroll Taxes — IRS 941</td><td>$13,605</td><td>0.35%</td></tr>
+            <tr><td>Job Supplies <span class="tag ok">$12.69/job avg</span></td><td>$8,425</td><td>0.22%</td></tr>
+            <tr><td>Taxes & Licenses</td><td>$4,371</td><td>0.11%</td></tr>
+            <tr><td>QB Payment Processing Fees</td><td>$4,199</td><td>0.11%</td></tr>
+            <tr><td>Other Business Expenses</td><td>$1,400</td><td>0.04%</td></tr>
+            <tr><td>Car & Truck</td><td>$1,147</td><td>0.03%</td></tr>
+            <tr><td>Contractors / Subcontractors</td><td>$724</td><td>0.02%</td></tr>
+            <tr><td>Bank Fees</td><td>$61</td><td>&lt;0.01%</td></tr>
+            <tr class="tot"><td>Total Confirmed</td><td>$84,188</td><td>2.16%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Key Finding — $12.69/Job in Materials</div>
+        <div class="kv sm" style="color:var(--green);margin:8px 0 4px;">Labor-Only Model</div>
+        <div class="note" style="font-size:12px;color:var(--text);">
+          $8,425 total Job Supplies over 664 invoices = $12.69 per job. This is the strongest data signal we have. It means one of:<br><br>
+          <strong>A.</strong> Customers supply materials (common in commercial/facility work)<br>
+          <strong>B.</strong> Cash purchases never entered QB (needs bank stmt to verify)<br>
+          <strong>C.</strong> Materials billed separately and buried in invoice totals<br><br>
+          Until bank statements confirm otherwise, <strong>Labor-Only is the correct model to use</strong> for this business.
+        </div>
+        <div class="alert" style="margin-top:12px;margin-bottom:0;">Bank statements will close this question permanently. One afternoon of reconciliation = years of accurate reporting.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CLIENTS ══ -->
+  <div id="page-clients" class="page">
+    <div class="g3" style="margin-bottom:12px;">
+      <div class="card"><div class="card-title">Unique Clients (all time)</div><div class="kv sm">472</div><div class="note">5 years, 664 invoices</div></div>
+      <div class="card"><div class="card-title">Multi-Year Retained</div><div class="kv sm" style="color:var(--green)">47</div><div class="note">10% retention — the stable floor</div></div>
+      <div class="card"><div class="card-title">Single-Year Only</div><div class="kv sm" style="color:var(--orange)">425</div><div class="note">90% — growth depends on acquisition</div></div>
+    </div>
+    <div class="alert"><strong>Retention is the biggest hidden lever.</strong> If even 20% of single-year clients returned for a second year, that's an additional ~$150–200K in revenue with zero marketing spend. Ask: why did SG Real Estate (44 invoices, 2023 only) stop? Why did P&R Paper (18 invoices) stop after one year?</div>
+    <div class="sec">Top 25 Clients</div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Client</th><th>Invoices</th><th>Years Active</th><th>First</th><th>Last Invoice</th><th>Status / Action</th></tr></thead>
+        <tbody id="client-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ ROADMAP ══ -->
+  <div id="page-roadmap" class="page">
+    <div class="blue-box"><strong>Honest assessment.</strong> $1M by end of 2027 is already nearly achieved — the 2026 run rate is $1.05M. The real challenge is $5M. That number requires building a company, not just growing a solo business. Here is the honest step-by-step.</div>
+
+    <div class="sec">Revenue Milestones</div>
+    <div class="g4" style="margin-bottom:14px;">
+      <div class="milestone done">
+        <div class="ms-num">Phase 0 — Complete</div>
+        <div class="ms-val done">$595K</div>
+        <div class="ms-desc">2025 actual. Business proven and operating. Client base established.</div>
+      </div>
+      <div class="milestone active-m">
+        <div class="ms-num">Phase 1 — In Progress</div>
+        <div class="ms-val active-m">$1.0M</div>
+        <div class="ms-desc">2026–2027. Already on pace. Sustain commercial accounts + small marketing push. 1–2 subs on call.</div>
+      </div>
+      <div class="milestone future">
+        <div class="ms-num">Phase 2 — 2028 Target</div>
+        <div class="ms-val">$2.0M</div>
+        <div class="ms-desc">Realistic stretch. 3–4 billable electricians. Formal estimating process. Service agreements with key commercial clients.</div>
+      </div>
+      <div class="milestone future">
+        <div class="ms-num">Phase 3 — 2029–2030</div>
+        <div class="ms-val">$5.0M</div>
+        <div class="ms-desc">Full crew of 10–15. Operations manager. Fleet. Bonded for large commercial contracts. Possible C-10 upgrade.</div>
+      </div>
+    </div>
+
+    <div class="sec mt">What Each Phase Actually Requires — Honest Checklist</div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title" style="color:var(--accent);">Phase 1 → $1M (Now — End 2027)</div>
+        <ul class="checklist">
+          <li><span class="check-icon">✅</span><span class="check-label">Revenue</span>Already at $1.05M run rate. Just sustain.</li>
+          <li><span class="check-icon">⚡</span><span class="check-label">Commercial</span>Lock in 2–3 facility management contracts. Malcolm Drilling, Eaton, A-Prime are the template.</li>
+          <li><span class="check-icon">📋</span><span class="check-label">QB / Books</span>Get bank statements. Close the expense gap. Accurate books = ability to get credit.</li>
+          <li><span class="check-icon">📱</span><span class="check-label">Marketing</span>$500/mo Google Ads or Yelp. Adds ~$25K/mo revenue at current close rates.</li>
+          <li><span class="check-icon">🤝</span><span class="check-label">Subs</span>1–2 trusted subcontractors on call. Don't turn down work — sub it out.</li>
+          <li><span class="check-icon">📞</span><span class="check-label">Retention</span>Call top 10 churned clients. Offer a maintenance check-in. Re-win 2–3.</li>
+          <li><span class="check-icon">💳</span><span class="check-label">Credit</span>Open a business credit card for materials. Separates cash flow from personal.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--purple);">Phase 2 → $2M (2028)</div>
+        <ul class="checklist">
+          <li><span class="check-icon">👷</span><span class="check-label">Hiring</span>Hire 2–3 licensed journeymen. W-2 or 1099. Each adds ~$180K revenue.</li>
+          <li><span class="check-icon">🔧</span><span class="check-label">Systems</span>Scheduling software (Jobber or ServiceTitan Lite — ~$100/mo). Stop losing jobs to disorganization.</li>
+          <li><span class="check-icon">📄</span><span class="check-label">Estimating</span>Standardize job estimates. Template pricing sheet. Stop leaving money on the table.</li>
+          <li><span class="check-icon">🏦</span><span class="check-label">Banking</span>Business line of credit ($50–100K). Needed for large material purchases on commercial jobs.</li>
+          <li><span class="check-icon">🛡️</span><span class="check-label">Insurance</span>Workers comp will jump to $10–20K/yr with employees. Budget for it.</li>
+          <li><span class="check-icon">🚐</span><span class="check-label">Vehicles</span>1–2 work vans. Can lease. Crews need independent transportation.</li>
+          <li><span class="check-icon">📊</span><span class="check-label">Bookkeeper</span>Monthly bookkeeper ($300–500/mo). You can't scale and do your own books.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title" style="color:var(--red);">Phase 3 → $5M (2029–2030) — What Changes at This Scale</div>
+      <div class="g3" style="margin-top:10px;">
+        <div>
+          <div style="font-family:'DM Mono';font-size:10px;color:var(--muted);margin-bottom:8px;">PEOPLE NEEDED</div>
+          <ul class="checklist">
+            <li><span class="check-icon">👷</span><span class="check-label">Field</span>10–15 billable electricians running parallel jobs</li>
+            <li><span class="check-icon">🗂️</span><span class="check-label">Ops</span>1 operations/project manager ($70–90K salary)</li>
+            <li><span class="check-icon">📞</span><span class="check-label">Admin</span>1 office admin / dispatcher ($45–60K salary)</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-family:'DM Mono';font-size:10px;color:var(--muted);margin-bottom:8px;">COSTS THAT SCALE UP</div>
+          <ul class="checklist">
+            <li><span class="check-icon">💰</span><span class="check-label">Payroll</span>$800K–$1.2M/yr in labor costs alone</li>
+            <li><span class="check-icon">🛡️</span><span class="check-label">Insurance</span>Workers comp: $40–80K/yr. GL: $20–40K/yr</li>
+            <li><span class="check-icon">🚐</span><span class="check-label">Fleet</span>5–8 vans at $600–900/mo each = $50–86K/yr</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-family:'DM Mono';font-size:10px;color:var(--muted);margin-bottom:8px;">NET MARGIN AT $5M</div>
+          <ul class="checklist">
+            <li><span class="check-icon">📊</span><span class="check-label">Revenue</span>$5,000,000</li>
+            <li><span class="check-icon">➖</span><span class="check-label">Labor</span>~$1,100,000 (field + office)</li>
+            <li><span class="check-icon">➖</span><span class="check-label">Insurance</span>~$120,000</li>
+            <li><span class="check-icon">➖</span><span class="check-label">Fleet</span>~$70,000</li>
+            <li><span class="check-icon">➖</span><span class="check-label">Overhead</span>~$200,000</li>
+            <li><span class="check-icon">✅</span><span class="check-label">Net</span>~$3,500,000 (70% margin) before owner comp</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /app -->
+
+<script>
+// ── AUTH ──────────────────────────────────────────────────────
+const PASS = 'tarin2026';
+function doLogin(){
+  const v=document.getElementById('pw-input').value;
+  if(v===PASS){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';initCharts();}
+  else{document.getElementById('login-err').textContent='Incorrect password. Try again.';document.getElementById('pw-input').value='';}
+}
+function doLogout(){document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('pw-input').value='';document.getElementById('login-err').textContent='';}
+
+// ── DATA ──────────────────────────────────────────────────────
+const MR={'2021-03':1880,'2021-05':25532,'2021-06':26452,'2021-07':13860,'2021-08':36100,'2021-09':60150,'2021-10':26736,'2021-11':25200,'2021-12':83222,'2022-01':88260,'2022-02':66768,'2022-03':134710,'2022-04':32250,'2022-05':98610,'2022-06':95200,'2022-07':20400,'2022-08':55470,'2022-09':43272,'2022-10':81628,'2022-11':76600,'2022-12':82604,'2023-01':118941.77,'2023-02':79003.12,'2023-03':22062.87,'2023-04':107213.47,'2023-05':107560,'2023-06':107390,'2023-07':26820,'2023-08':37490,'2023-09':175972,'2023-10':99201.74,'2023-11':21220.72,'2023-12':57677.73,'2024-01':137568.31,'2024-02':64850,'2024-03':33697,'2024-04':41030,'2024-05':30360.90,'2024-06':85901.14,'2024-07':79559,'2024-08':135230,'2024-09':11440,'2024-10':44410,'2024-11':32930.50,'2024-12':25775.18,'2025-01':105180,'2025-02':91517,'2025-03':31150,'2025-04':52970,'2025-05':28700,'2025-06':19178,'2025-07':17920,'2025-08':9836,'2025-09':99026,'2025-10':32020,'2025-11':16364,'2025-12':91319.50,'2026-01':11570,'2026-02':28078,'2026-03':297689,'2026-04':49594,'2026-05':48610};
+const annRev={2021:299132,2022:875772,2023:960553,2024:722752,2025:595181,2026:435541};
+const annInv={2021:82,2022:156,2023:187,2024:99,2025:90,2026:50};
+const mileRate={2021:.56,2022:.605,2023:.655,2024:.67,2025:.70,2026:.70};
+const SI={'01':1.48,'02':1.06,'03':1.39,'04':.91,'05':.91,'06':1.07,'07':.51,'08':.88,'09':1.25,'10':.91,'11':.55,'12':1.09};
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+function fmtK(n){if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';return'$'+(n/1000).toFixed(0)+'K';}
+
+Chart.defaults.color='#4a5878';Chart.defaults.borderColor='#1e2d48';
+Chart.defaults.font.family='DM Mono';Chart.defaults.font.size=10;
+const tip={backgroundColor:'#0f1520',borderColor:'#1e2d48',borderWidth:1,titleColor:'#c8d4e8',bodyColor:'#7a90b8',callbacks:{label:ctx=>' '+fmtK(ctx.raw)}};
+const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip},scales:{x:{grid:{color:'#1e2d48'},ticks:{color:'#4a5878',maxRotation:45}},y:{grid:{color:'#1e2d48'},ticks:{color:'#4a5878',callback:v=>fmtK(v)}}}};
+
+let chartsInited=false;
+function initCharts(){
+  if(chartsInited)return;chartsInited=true;
+  buildOverviewCharts();buildRevenueCharts();buildPLChart();buildTicketChart();buildClientTable();calcPlanner();renderPL();
+}
+
+// ── OVERVIEW CHARTS ───────────────────────────────────────────
+function buildOverviewCharts(){
+  // Goal line chart
+  new Chart(document.getElementById('c-goal-line'),{type:'line',data:{
+    labels:['2021','2022','2023','2024','2025','2026*','2027 Goal','2028 Goal'],
+    datasets:[
+      {label:'Actual Revenue',data:[299132,875772,960553,722752,595181,1045298,null,null],borderColor:'#2dd4a7',backgroundColor:'rgba(45,212,167,.1)',tension:.3,pointBackgroundColor:'#2dd4a7',pointRadius:4,fill:true},
+      {label:'Goal',data:[null,null,null,null,null,1045298,1000000,5000000],borderColor:'#f5a623',borderDash:[6,3],tension:.3,pointBackgroundColor:'#f5a623',pointRadius:5,pointStyle:'star'},
+      {label:'Conservative Path',data:[null,null,null,null,null,1045298,1100000,2000000],borderColor:'#4a90d9',borderDash:[3,3],tension:.3,pointRadius:3}
+    ]
+  },options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:tip}}});
+
+  // Lever overview
+  new Chart(document.getElementById('c-levers-overview'),{type:'bar',data:{
+    labels:['$1M (2027)','$2M (2028)','$5M (2030)'],
+    datasets:[
+      {label:'Base (organic)',data:[654699,720000,800000],backgroundColor:'rgba(45,212,167,.6)',borderRadius:3},
+      {label:'Commercial contracts',data:[225000,450000,1500000],backgroundColor:'rgba(74,144,217,.6)',borderRadius:3},
+      {label:'Additional crew',data:[180000,720000,2700000],backgroundColor:'rgba(155,109,219,.6)',borderRadius:3},
+      {label:'Marketing',data:[48750,97500,195000],backgroundColor:'rgba(245,166,35,.6)',borderRadius:3}
+    ]
+  },options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:tip}}});
+}
+
+// ── REVENUE CHARTS ────────────────────────────────────────────
+let rvChart;
+let activeYr='all',activeVw='monthly';
+function buildRevenueCharts(){
+  refreshRV();
+  new Chart(document.getElementById('c-seasonal'),{type:'bar',data:{labels:MN,datasets:[{data:['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>SI[m]),backgroundColor:['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>SI[m]>=1?'rgba(45,212,167,.7)':'rgba(224,95,42,.5)'),borderRadius:3}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{callback:v=>v.toFixed(1)+'x'}}}}});
+  new Chart(document.getElementById('c-quarterly'),{type:'bar',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:'2022',data:[289738,226060,119142,240832],backgroundColor:'rgba(74,144,217,.6)',borderRadius:3},{label:'2023',data:[220008,322163,240282,178100],backgroundColor:'rgba(45,212,167,.7)',borderRadius:3},{label:'2024',data:[236115,157292,226229,103116],backgroundColor:'rgba(224,153,40,.6)',borderRadius:3},{label:'2025',data:[227847,100848,126782,139703],backgroundColor:'rgba(224,95,42,.6)',borderRadius:3}]},options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:tip}}});
+}
+function refreshRV(){
+  let pairs=Object.entries(MR).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(activeYr!=='all')pairs=pairs.filter(([p])=>p.startsWith(activeYr));
+  if(activeVw==='quarterly'){const qm={};pairs.forEach(([p,v])=>{const m=parseInt(p.slice(5));const q=p.slice(0,4)+'-Q'+Math.ceil(m/3);qm[q]=(qm[q]||0)+v;});pairs=Object.entries(qm).sort();}
+  else if(activeVw==='annual'){const ym={};pairs.forEach(([p,v])=>{const y=p.slice(0,4);ym[y]=(ym[y]||0)+v;});pairs=Object.entries(ym).sort();}
+  const revs=pairs.map(([,v])=>v);
+  if(rvChart)rvChart.destroy();
+  rvChart=new Chart(document.getElementById('c-rev-oh'),{type:'bar',data:{labels:pairs.map(([p])=>p.replace('-','/')),datasets:[{label:'Revenue',data:revs,backgroundColor:'rgba(45,212,167,.65)',borderRadius:3},{label:'15% Ref',data:revs.map(r=>r*.15),backgroundColor:'rgba(224,95,42,.4)',borderRadius:3}]},options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:{...tip,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtK(ctx.raw)}}}}});
+}
+function setRV(v,el){document.querySelectorAll('#page-revenue .cb:not([id])').forEach(b=>b.classList.remove('active'));el.classList.add('active');activeVw=v;refreshRV();}
+function filterYr(yr,el){document.querySelectorAll('[id^=yr-]').forEach(b=>b.classList.remove('active'));el.classList.add('active');activeYr=yr;refreshRV();}
+
+// ── TICKET CHART ─────────────────────────────────────────────
+function buildTicketChart(){
+  new Chart(document.getElementById('c-ticket'),{type:'bar',data:{labels:['2021','2022','2023','2024','2025','2026*'],datasets:[{label:'Avg Ticket',data:[3648,5614,5137,7301,6613,8711],backgroundColor:'rgba(74,144,217,.7)',borderRadius:3,yAxisID:'y'},{label:'Invoice Count',data:[82,156,187,99,90,50],backgroundColor:'rgba(224,95,42,.4)',borderRadius:3,yAxisID:'y2'}]},options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:tip},scales:{x:{grid:{color:'#1e2d48'},ticks:{color:'#4a5878'}},y:{grid:{color:'#1e2d48'},ticks:{color:'#4a90d9',callback:v=>fmtK(v)},position:'left'},y2:{grid:{display:false},ticks:{color:'#e05f2a'},position:'right'}}}});
+}
+
+// ── GROWTH PLANNER ────────────────────────────────────────────
+let plannerChart;
+function calcPlanner(){
+  const accounts=+document.getElementById('l1-accounts').value;
+  const accVal=+document.getElementById('l1-val').value;
+  const crew=+document.getElementById('l2-crew').value;
+  const rate=+document.getElementById('l2-rate').value;
+  const hrs=+document.getElementById('l2-hrs').value;
+  const crewCost=+document.getElementById('l2-cost').value;
+  const spend=+document.getElementById('l3-spend').value;
+  const cpl=+document.getElementById('l3-cpl').value;
+  const close=+document.getElementById('l3-close').value/100;
+  const ticket=+document.getElementById('l3-ticket').value;
+  const growth=+document.getElementById('l0-growth').value/100;
+  const draw=+document.getElementById('l0-draw').value;
+  const matPct=+document.getElementById('l0-mat').value/100;
+
+  // Update displays
+  document.getElementById('v1-accounts').textContent=accounts;
+  document.getElementById('v1-val').textContent=fmtK(accVal);
+  document.getElementById('v2-crew').textContent=crew;
+  document.getElementById('v2-rate').textContent='$'+rate;
+  document.getElementById('v2-hrs').textContent=hrs.toLocaleString();
+  document.getElementById('v2-cost').textContent=fmtK(crewCost);
+  document.getElementById('v3-spend').textContent=fmt(spend);
+  document.getElementById('v3-cpl').textContent='$'+cpl;
+  document.getElementById('v3-close').textContent=Math.round(close*100)+'%';
+  document.getElementById('v3-ticket').textContent=fmt(ticket);
+  document.getElementById('v0-growth').textContent=(growth>=0?'+':'')+Math.round(growth*100)+'%';
+  document.getElementById('v0-draw').textContent=fmtK(draw);
+  document.getElementById('v0-mat').textContent=Math.round(matPct*100)+'%';
+
+  const baseRev2025=595181;
+  const runRate2026=1045298;
+
+  // 2027 calculation
+  const base27=runRate2026*(1+growth);
+  const commercial27=accounts*accVal;
+  const crew27=crew*rate*hrs;
+  const mktLeads27=spend/cpl*12;
+  const mktJobs27=mktLeads27*close;
+  const mkt27=mktJobs27*ticket;
+  const rev27=base27+commercial27+crew27+mkt27;
+
+  // 2028 (lever 2 scales, assuming hiring ramps)
+  const base28=base27*(1+growth);
+  const commercial28=accounts*accVal*1.2;
+  const crew28=crew*rate*hrs*1.5; // assumes more hours/more crew
+  const mkt28=mkt27*1.3;
+  const rev28=base28+commercial28+crew28+mkt28;
+
+  // Costs
+  const crewTotalCost27=crew*crewCost;
+  const leanOH=12000;
+  const matCost27=rev27*matPct;
+  const net27=rev27-crewTotalCost27-leanOH-matCost27-draw;
+  const net28=rev28-crewTotalCost27*1.5-leanOH-matCost27*rev28/rev27-draw;
+
+  const goal27=1000000;const goal28=5000000;
+  const hit27=rev27>=goal27;const hit28=rev28>=goal28;
+
+  const pct27=Math.min(100,rev27/goal27*100);
+  const pct28=Math.min(100,rev28/goal28*100);
+
+  document.getElementById('out-rev27').textContent=fmtK(rev27);
+  document.getElementById('out-rev27').className='op-rev '+(hit27?'hit':'miss');
+  document.getElementById('out-gap27').innerHTML=hit27?`<span style="color:var(--green)">✓ Goal hit — ${fmtK(rev27-goal27)} above target</span>`:`<span style="color:var(--orange)">Gap: ${fmtK(goal27-rev27)} short of $1M goal</span>`;
+  document.getElementById('gap-fill27').style.width=pct27+'%';
+
+  document.getElementById('out-rev28').textContent=fmtK(rev28);
+  document.getElementById('out-rev28').className='op-rev '+(hit28?'hit':'miss');
+  document.getElementById('out-gap28').innerHTML=hit28?`<span style="color:var(--green)">✓ Goal hit — ${fmtK(rev28-goal28)} above target</span>`:`<span style="color:var(--orange)">Gap: ${fmtK(goal28-rev28)} short of $5M goal — need ${Math.ceil((goal28-rev28)/(rate*hrs))} more electricians OR ${Math.ceil((goal28-rev28)/accVal)} more commercial accounts</span>`;
+  document.getElementById('gap-fill28').style.width=pct28+'%';
+
+  function detailHtml(rev,base,comm,crewR,mkt,crewC,oh,mat,draw,net,goal){
+    const nc=net>0?'var(--green)':'var(--orange)';
+    return`<div class="op-row"><span style="color:var(--label)">Base (organic growth)</span><span class="op-amt" style="color:var(--green)">${fmtK(base)}</span></div>
+    <div class="op-row"><span style="color:var(--label)">Commercial contracts</span><span class="op-amt" style="color:var(--blue)">${fmtK(comm)}</span></div>
+    <div class="op-row"><span style="color:var(--label)">Added crew revenue</span><span class="op-amt" style="color:var(--purple)">${fmtK(crewR)}</span></div>
+    <div class="op-row"><span style="color:var(--label)">Marketing revenue</span><span class="op-amt" style="color:var(--accent)">${fmtK(mkt)}</span></div>
+    <div class="op-row"><span style="color:var(--label)">Crew costs</span><span class="op-amt" style="color:var(--orange)">–${fmtK(crewC)}</span></div>
+    <div class="op-row"><span style="color:var(--label)">Lean overhead + materials</span><span class="op-amt" style="color:var(--orange)">–${fmtK(oh+mat)}</span></div>
+    <div class="op-row"><span style="color:var(--label)">Owner draw</span><span class="op-amt" style="color:var(--orange)">–${fmtK(draw)}</span></div>
+    <div class="op-row total"><span>Est. Net Profit</span><span class="op-amt" style="color:${nc}">${fmtK(net)} (${(net/rev*100).toFixed(0)}%)</span></div>`;
+  }
+  document.getElementById('out-detail27').innerHTML=detailHtml(rev27,base27,commercial27,crew27,mkt27,crewTotalCost27,leanOH,matCost27,draw,net27,goal27);
+  document.getElementById('out-detail28').innerHTML=detailHtml(rev28,base28,commercial28,crew28,mkt28,crewTotalCost27*1.5,leanOH,matCost27*rev28/rev27,draw,net28,goal28);
+
+  if(plannerChart)plannerChart.destroy();
+  plannerChart=new Chart(document.getElementById('c-planner'),{type:'bar',data:{
+    labels:['2025 Actual','2026 Run Rate','2027 Projected','2027 Goal','2028 Projected','2028 Goal'],
+    datasets:[
+      {label:'Actual/Projected',data:[595181,1045298,rev27,null,rev28,null],backgroundColor:['rgba(74,144,217,.6)','rgba(45,212,167,.6)','rgba(45,212,167,.8)','rgba(0,0,0,0)','rgba(155,109,219,.8)','rgba(0,0,0,0)'],borderRadius:4},
+      {label:'Goal',data:[null,null,null,goal27,null,goal28],backgroundColor:['rgba(0,0,0,0)','rgba(0,0,0,0)','rgba(0,0,0,0)','rgba(245,166,35,.4)','rgba(0,0,0,0)','rgba(245,166,35,.4)'],borderColor:['transparent','transparent','transparent','#f5a623','transparent','#f5a623'],borderWidth:[0,0,0,2,0,2],borderRadius:4}
+    ]
+  },options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:tip}}});
+}
+
+// ── P&L ──────────────────────────────────────────────────────
+let plY=2023,plM=0;
+function setPLY(y,el){document.querySelectorAll('#page-expenses .cb').forEach(b=>b.classList.remove('active'));el.classList.add('active');plY=y;document.getElementById('pl-yr-label').textContent=y;renderPL();}
+function setPLM(m,el){document.querySelectorAll('#page-expenses .cb').forEach(b=>b.classList.remove('active'));el.classList.add('active');plM=m;renderPL();}
+let plChart;
+function buildPLChart(){
+  const yrs=[2021,2022,2023,2024,2025];
+  const calcNet=(yr,mp)=>{const r=annRev[yr];const inv=annInv[yr];const m=r*mp/100;const pay=yr===2023?63862:0;const oh=12000+inv*.85*30*mileRate[yr];return Math.round(r-m-pay-oh);};
+  if(plChart)plChart.destroy();
+  plChart=new Chart(document.getElementById('c-pl'),{type:'bar',data:{labels:yrs.map(String),datasets:[{label:'Labor Only (0%)',data:yrs.map(yr=>calcNet(yr,0)),backgroundColor:'rgba(45,212,167,.7)',borderRadius:3},{label:'Mixed 10%',data:yrs.map(yr=>calcNet(yr,10)),backgroundColor:'rgba(245,166,35,.6)',borderRadius:3},{label:'Supply 25%',data:yrs.map(yr=>calcNet(yr,25)),backgroundColor:'rgba(224,95,42,.5)',borderRadius:3},{label:'Sheet 15%',data:yrs.map(yr=>Math.round(annRev[yr]*.85)),backgroundColor:'rgba(74,144,217,.4)',borderRadius:3}]},options:{...base,plugins:{legend:{display:true,labels:{color:'#7a90b8',font:{family:'DM Mono',size:9}}},tooltip:tip}}});
+}
+function renderPL(){
+  const rev=annRev[plY];const inv=annInv[plY];
+  const mat=rev*plM/100;
+  const pay=plY===2023?63862:0;
+  const miles=inv*.85*30*(mileRate[plY]||.67);
+  const oh=4500+1800+2000+1200;
+  const qbOther=84188*(rev/3888490);
+  const net=rev-mat-pay-miles-oh-qbOther;
+  const nc=net/rev>0.5?'var(--green)':net/rev>0.25?'var(--accent)':'var(--orange)';
+  let h='';
+  const row=(l,a,pos)=>`<div class="op-row"><span style="color:var(--label)">${l}</span><span class="op-amt" style="color:${pos?'var(--green)':'var(--orange)'}">${pos?'+':'–'}${fmt(Math.abs(a))}</span></div>`;
+  h+=row('Revenue',rev,true);
+  if(mat>0)h+=row(`Materials (${plM}%)`,mat,false);
+  if(pay>0)h+=row('Payroll + taxes (2023 confirmed)',pay,false);
+  h+=row('Mileage (IRS rate, ~30mi/day est.)',miles,false);
+  h+=row('GL Insurance + license + tools',oh,false);
+  h+=row('QB confirmed other (allocated)',qbOther,false);
+  h+=`<div class="op-row total"><span>Net (before owner draw)</span><span class="op-amt" style="color:${nc}">${fmt(net)} <span style="font-size:10px;color:var(--muted)">(${(net/rev*100).toFixed(1)}%)</span></span></div>`;
+  document.getElementById('pl-content').innerHTML=h;
+}
+
+// ── CLIENTS ──────────────────────────────────────────────────
+function buildClientTable(){
+  const data=[['SG Real Estate',44,'2023','09/19/2023','One-year, 44 inv — why did they stop?','dn'],['Imperial Dade',28,'2022–2025','10/27/2025','★ Most loyal. Facility client. Service agreement opportunity.','up'],['Malcolm Drilling',19,'2023–2026','03/21/2026','Active + growing. Part of Mar\'26 spike.','up'],['P&R Paper',18,'2022','08/09/2022','Churned after 1 year. Re-engage.','warn'],['Life West Chiropractic',18,'2022–2025','04/16/2025','Multi-year commercial. Inactive 2026.','info'],['Superior Construction',18,'2023–2025','04/25/2025','Multi-year. Follow up.','info'],['Utopia Management',15,'2023–2025','10/04/2025','Property mgmt. Recurring opportunity.','info'],['Ana Peterson',12,'2022–2026','01/27/2026','Long-term residential. Active.','up'],['A-Prime Handling',11,'2024–2026','05/05/2026','Growing. 2024–2026 active.','up'],['Five Canyons HOA',10,'2023–2026','04/09/2026','4-yr retention. HOA contract candidate.','up'],['Azuma Foods',9,'2022–2026','05/04/2026','Food sector. Long-term active.','up'],['Alameda Electrical',9,'2023–2026','02/15/2026','Sub pipeline. Leverage for capacity.','info'],['EMJ Metals',8,'2023–2026','03/06/2026','Industrial. Active.','up'],['Lawson Drayage',8,'2025–2026','04/15/2026','Growing. Part of Mar\'26 spike.','up'],['Lighthouse Community',8,'2025–2026','03/30/2026','Recent + active. New relationship.','up'],['Eaton Corporation',3,'2026','03/2026','NEW. Major electrical manufacturer. Cultivate urgently.','up'],['Gottstein Corp',8,'2022–2025','11/21/2025','Multi-year. Inactive 2026 — follow up.','warn'],['HDR Remodeling',8,'2023–2024','01/16/2024','Inactive. Re-engage for reno pipeline.','warn'],['Mike Berkowitz',9,'2023–2026','05/05/2026','Residential. Long-term active.','up'],['TCI Aluminum',10,'2025','10/28/2025','Industrial. Single year. Re-engage.','warn'],['590 Lisbon St',8,'2025','12/30/2025','Batch invoicing. Single property.','info'],['Venk Subramanian',14,'2021','09/13/2021','Early client. Long churned.','dn'],['Dean Harter',7,'2021','10/25/2021','Early client. Churned.','dn'],['Dena Wheeler',7,'2022–2023','02/01/2023','Inactive 2024+. Re-engage.','warn'],['J.J. Advantage',7,'2023','11/01/2023','Single year. Re-engage.','warn']];
+  const tb=document.getElementById('client-tbody');
+  data.forEach(([n,inv,yrs,last,note,s],i)=>{
+    const c=s==='up'?'var(--green)':s==='dn'?'var(--muted)':s==='warn'?'var(--orange)':'var(--blue)';
+    tb.innerHTML+=`<tr><td style="color:var(--muted)">${i+1}</td><td><strong>${n}</strong></td><td style="color:var(--accent)">${inv}</td><td>${yrs}</td><td style="color:var(--muted);font-size:11px">${last}</td><td style="color:${c};font-size:11px">${note}</td></tr>`;
+  });
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='revenue')setTimeout(()=>refreshRV(),50);
+}
+</script>
+</body>
+</html>
